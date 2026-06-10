@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SiteLayout } from "@/components/SiteLayout";
@@ -28,10 +28,40 @@ const orderSchema = z.object({
 
 function CartPage() {
   const { items, updateQty, remove, total, clear, count } = useCart();
-  const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [encodedMessage, setEncodedMessage] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", phone: "", address: "", payment: "transfer" as "transfer" | "cod" | "ewallet", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Tampilan sukses setelah pesanan tersimpan — TANPA auto-redirect.
+  if (encodedMessage) {
+    return (
+      <SiteLayout>
+        <div className="max-w-xl mx-auto px-6 py-24 text-center">
+          <div className="w-20 h-20 mx-auto rounded-full bg-green-100 grid place-items-center">
+            <CheckCircle2 className="w-12 h-12 text-green-600" />
+          </div>
+          <h1 className="mt-6 text-3xl font-bold">Pesanan Berhasil Dicatat! 🎉</h1>
+          <p className="mt-3 text-muted-foreground">
+            Data pesanan Anda sudah tersimpan. Klik tombol hijau di bawah untuk mengirim detail pesanan ke admin via WhatsApp.
+          </p>
+          <a
+            href={`https://wa.me/6287882339338?text=${encodedMessage}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full bg-green-600 text-white text-lg font-bold hover:bg-green-700 transition shadow-lg"
+          >
+            Lanjutkan ke WhatsApp
+          </a>
+          <div className="mt-6">
+            <Link to="/order" className="text-sm text-muted-foreground hover:text-primary underline">
+              Kembali ke Etalase
+            </Link>
+          </div>
+        </div>
+      </SiteLayout>
+    );
+  }
 
   if (count === 0) {
     return (
@@ -104,9 +134,9 @@ function CartPage() {
       return;
     }
 
-    toast.success("Pesanan berhasil dicatat & dialihkan ke WhatsApp");
+    toast.success("Pesanan berhasil dicatat!");
 
-    // 2) Susun pesan dan buka WhatsApp
+    // 2) Susun pesan WhatsApp — TANPA auto-redirect (user klik tombol sendiri)
     const lines = itemPesanan
       .map((it) => `• ${it.nama_produk} (${it.jumlah} x ${formatRupiah(it.harga_satuan)}) = ${formatRupiah(it.subtotal)}`)
       .join("\n");
@@ -126,18 +156,9 @@ ${lines}
 *TOTAL TAGIHAN:* ${formatRupiah(grandTotal)}
 ----------------------------------`;
 
-    const encodedMessage = encodeURIComponent(message);
-    const link = document.createElement("a");
-    link.href = `https://wa.me/6287882339338?text=${encodedMessage}`;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    setEncodedMessage(encodeURIComponent(message));
     clear();
     setSubmitting(false);
-    navigate({ to: "/order" });
   };
 
   return (
