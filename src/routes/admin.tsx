@@ -432,23 +432,20 @@ function AdminPage() {
                   const tanggal = new Date(o.created_at).toLocaleString("id-ID", {
                     day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
                   });
-                  const statusColor =
-                    o.status_pesanan === "Baru"
-                      ? "text-emerald-700 border-emerald-300 bg-emerald-50"
-                      : o.status_pesanan === "Diproses"
-                      ? "text-amber-700 border-amber-300 bg-amber-50"
-                      : "text-slate-700 border-slate-300 bg-slate-50";
-                  const updateStatus = async (next: string) => {
-                    const { error } = await supabase
-                      .from("pesanan")
-                      .update({ status_pesanan: next })
-                      .eq("id", o.id);
-                    if (error) toast.error("Gagal update status: " + error.message);
-                    else {
-                      toast.success(`Pesanan #${o.id} → ${next}`);
-                      await fetchOrders();
-                    }
-                  };
+                  const tanggalKirim = o.tanggal_kirim
+                    ? new Date(o.tanggal_kirim).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" })
+                    : "—";
+                  const isBaru = Date.now() - new Date(o.created_at).getTime() < 24 * 3600 * 1000;
+                  const statusLabel = isBaru ? "Baru" : "Diproses";
+                  const statusColor = isBaru
+                    ? "text-emerald-700 border-emerald-300 bg-emerald-50"
+                    : "text-amber-700 border-amber-300 bg-amber-50";
+                  const items: PesananItem[] = (() => {
+                    const k = o.keranjang;
+                    if (!k) return [];
+                    if (Array.isArray(k)) return k;
+                    try { return JSON.parse(k) as PesananItem[]; } catch { return []; }
+                  })();
                   return (
                     <Card key={o.id} style={{ boxShadow: "var(--shadow-card)" }}>
                       <CardHeader className="border-b border-border">
@@ -456,11 +453,11 @@ function AdminPage() {
                           <div>
                             <div className="flex items-center gap-2 mb-1">
                               <Badge className="bg-primary text-primary-foreground">#BRK-{o.id}</Badge>
-                              <Badge variant="outline" className={statusColor}>{o.status_pesanan}</Badge>
+                              <Badge variant="outline" className={statusColor}>{statusLabel}</Badge>
                             </div>
-                            <CardTitle className="font-display text-lg">{o.nama_pembeli}</CardTitle>
+                            <CardTitle className="font-display text-lg">{o.nama}</CardTitle>
                             <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                              <Phone className="w-3.5 h-3.5" /> {o.nomor_wa}
+                              <Phone className="w-3.5 h-3.5" /> {o.hp}
                             </div>
                           </div>
                           <div className="text-sm text-right">
@@ -468,7 +465,7 @@ function AdminPage() {
                               <Calendar className="w-3.5 h-3.5" /> {tanggal}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
-                              {o.metode_pembayaran}
+                              Kirim: {tanggalKirim}
                             </div>
                           </div>
                         </div>
@@ -501,10 +498,10 @@ function AdminPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {(o.item_pesanan ?? []).map((it, idx) => (
+                              {items.map((it, idx) => (
                                 <tr key={idx} className="border-t border-border">
-                                  <td className="px-4 py-2">{it.nama}</td>
-                                  <td className="px-4 py-2 text-center">{it.qty}</td>
+                                  <td className="px-4 py-2">{it.nama_produk}</td>
+                                  <td className="px-4 py-2 text-center">{it.jumlah}</td>
                                   <td className="px-4 py-2 text-right">{formatRupiah(it.subtotal)}</td>
                                 </tr>
                               ))}
@@ -519,19 +516,6 @@ function AdminPage() {
                             </tfoot>
                           </table>
                         </div>
-
-                        <div className="flex gap-2 justify-end">
-                          <Button variant="outline" size="sm" onClick={() => updateStatus("Diproses")}>
-                            Tandai Diproses
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={() => updateStatus("Selesai")}
-                          >
-                            Konfirmasi Pesanan
-                          </Button>
-                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -541,6 +525,7 @@ function AdminPage() {
           )}
         </div>
       </div>
+
 
       {editing && (
         <EditProductModal
