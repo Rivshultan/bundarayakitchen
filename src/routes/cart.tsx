@@ -6,6 +6,7 @@ import { z } from "zod";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useCart, formatRupiah } from "@/lib/cart";
 import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
