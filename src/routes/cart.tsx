@@ -9,7 +9,7 @@ import { useCart, formatRupiah } from "@/lib/cart";
 export const Route = createFileRoute("/cart")({
   head: () => ({
     meta: [
-      { title: "Keranjang — Daging.id" },
+      { title: "Keranjang — BundaRayaKitchen.id" },
       { name: "description", content: "Tinjau pesanan dan isi form order untuk checkout." },
     ],
   }),
@@ -40,7 +40,7 @@ function CartPage() {
             <Check className="w-10 h-10 text-primary-foreground" />
           </div>
           <h1 className="mt-6 text-3xl font-bold">Pesanan diterima!</h1>
-          <p className="mt-3 text-muted-foreground">Terima kasih sudah berbelanja di Daging.id. Tim kami akan menghubungi Anda lewat WhatsApp untuk konfirmasi.</p>
+          <p className="mt-3 text-muted-foreground">Terima kasih sudah berbelanja di BundaRayaKitchen.id. Tim kami akan menghubungi Anda lewat WhatsApp untuk konfirmasi.</p>
           <button onClick={() => navigate({ to: "/order" })} className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:opacity-90">
             Belanja Lagi
           </button>

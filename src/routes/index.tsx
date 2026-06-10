@@ -7,7 +7,7 @@ import { categories } from "@/lib/products";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Daging.id — Daging Segar Sampai ke Pintu Rumah" },
+      { title: "BundaRayaKitchen.id — Daging Segar Sampai ke Pintu Rumah" },
       { name: "description", content: "Belanja daging sapi, ayam, dan daging olahan segar berkualitas premium. Pesan online, antar cepat." },
     ],
   }),

@@ -5,9 +5,9 @@ import { SiteLayout } from "@/components/SiteLayout";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "Tentang Kami — Daging.id" },
-      { name: "description", content: "Kisah Daging.id: misi kami menghadirkan daging segar berkualitas premium langsung ke rumah Anda." },
-      { property: "og:title", content: "Tentang Daging.id" },
+      { title: "Tentang Kami — BundaRayaKitchen.id" },
+      { name: "description", content: "Kisah BundaRayaKitchen.id: misi kami menghadirkan daging segar berkualitas premium langsung ke rumah Anda." },
+      { property: "og:title", content: "Tentang BundaRayaKitchen.id" },
       { property: "og:description", content: "Misi kami: daging segar, transparan, dan terpercaya." },
     ],
   }),
@@ -21,7 +21,7 @@ function About() {
         <span className="text-xs font-medium tracking-wider uppercase text-primary">Tentang Kami</span>
         <h1 className="mt-4 text-4xl md:text-6xl font-bold leading-tight">Daging segar bukan lagi sebuah kompromi.</h1>
         <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Daging.id lahir dari kegelisahan sederhana: kenapa belanja daging berkualitas harus selalu merepotkan? Kami menjawabnya dengan platform online yang transparan, cepat, dan terpercaya.
+          BundaRayaKitchen.id lahir dari kegelisahan sederhana: kenapa belanja daging berkualitas harus selalu merepotkan? Kami menjawabnya dengan platform online yang transparan, cepat, dan terpercaya.
         </p>
       </section>
 
@@ -32,10 +32,13 @@ function About() {
         <div>
           <h2 className="text-3xl font-bold">Cerita kami</h2>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            Berawal dari toko daging keluarga di Jakarta yang sudah berdiri sejak 1998, kami melihat banyak pelanggan kesulitan mendapat daging segar tanpa harus pergi pagi ke pasar. Di 2024, kami membawa pengalaman puluhan tahun itu ke dunia digital — agar siapa pun bisa pesan daging premium hanya dari layar ponsel.
+            Bunda Raya Kitchen bermula dari kios sederhana di Depok. Bapak Rival Akhmadi, pendiri kami, percaya bahwa kualitas daging tidak harus mahal jika pengelolaannya benar.
           </p>
           <p className="mt-4 text-muted-foreground leading-relaxed">
-            Setiap potongan yang Anda terima dipilih oleh tukang daging berpengalaman, dikemas higienis dengan teknologi vacuum sealing, dan dikirim dalam kondisi tetap dingin.
+            Kini kami melayani lebih dari 2.400++ pelanggan setia dan memiliki armada pengiriman berpendingin yang siap menjangkau seluruh Indonesia.
+          </p>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            Setiap produk yang kami jual sudah melalui seleksi ketat — dari pilihan hewan ternak, proses penyembelihan halal, hingga pengemasan yang higienis.
           </p>
         </div>
       </section>
