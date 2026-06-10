@@ -9,9 +9,9 @@ import { useCart, formatRupiah, type Product } from "@/lib/cart";
 export const Route = createFileRoute("/order")({
   head: () => ({
     meta: [
-      { title: "Etalase — Daging.id" },
+      { title: "Etalase — BundaRayaKitchen.id" },
       { name: "description", content: "Lihat dan pesan daging sapi, ayam, dan olahan langsung dari etalase kami." },
-      { property: "og:title", content: "Etalase Daging.id" },
+      { property: "og:title", content: "Etalase BundaRayaKitchen.id" },
       { property: "og:description", content: "Pilih dari berbagai potongan daging premium siap kirim hari ini." },
     ],
   }),

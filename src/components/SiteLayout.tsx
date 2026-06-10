@@ -14,7 +14,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <span className="w-9 h-9 rounded-full grid place-items-center" style={{ background: "var(--gradient-warm)" }}>
               <Beef className="w-5 h-5 text-primary-foreground" />
             </span>
-            <span className="font-display text-xl font-bold tracking-tight">Daging<span className="text-primary">.</span>id</span>
+            <span className="font-display text-xl font-bold tracking-tight">BundaRayaKitchen<span className="text-primary">.</span>id</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
@@ -58,7 +58,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Beef className="w-5 h-5 text-primary" />
-              <span className="font-display text-lg font-bold">Daging.id</span>
+              <span className="font-display text-lg font-bold">BundaRayaKitchen.id</span>
             </div>
             <p className="text-muted-foreground">Daging segar berkualitas, langsung dari pemasok terpercaya ke dapur Anda.</p>
           </div>
@@ -76,7 +76,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
         <div className="border-t border-border py-5 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Daging.id — Semua hak dilindungi.
+          © {new Date().getFullYear()} BundaRayaKitchen.id — Semua hak dilindungi.
         </div>
       </footer>
     </div>
