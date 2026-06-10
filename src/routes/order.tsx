@@ -131,7 +131,7 @@ function ProductDialog({ product, onClose }: { product: Product; onClose: () => 
         <button onClick={onClose} className="absolute top-4 right-4 z-10 w-9 h-9 grid place-items-center rounded-full bg-background/80 backdrop-blur hover:bg-background">
           <X className="w-4 h-4" />
         </button>
-        <img src={product.image} alt={product.name} className="w-full h-64 md:h-full object-cover" width={600} height={600} />
+        <img src={product.image} alt={product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }} className="w-full h-64 md:h-full object-cover" width={600} height={600} />
         <div className="p-7 flex flex-col">
           <span className="text-xs uppercase tracking-wider text-muted-foreground">Daging segar</span>
           <h2 className="text-2xl font-bold mt-1">{product.name}</h2>
