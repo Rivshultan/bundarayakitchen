@@ -5,9 +5,9 @@ import { SiteLayout } from "@/components/SiteLayout";
 export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
-      { title: "Tentang Kami — Daging.id" },
-      { name: "description", content: "Kisah Daging.id: misi kami menghadirkan daging segar berkualitas premium langsung ke rumah Anda." },
-      { property: "og:title", content: "Tentang Daging.id" },
+      { title: "Tentang Kami — BundaRayaKitchen.id" },
+      { name: "description", content: "Kisah BundaRayaKitchen.id: misi kami menghadirkan daging segar berkualitas premium langsung ke rumah Anda." },
+      { property: "og:title", content: "Tentang BundaRayaKitchen.id" },
       { property: "og:description", content: "Misi kami: daging segar, transparan, dan terpercaya." },
     ],
   }),
@@ -21,7 +21,7 @@ function About() {
         <span className="text-xs font-medium tracking-wider uppercase text-primary">Tentang Kami</span>
         <h1 className="mt-4 text-4xl md:text-6xl font-bold leading-tight">Daging segar bukan lagi sebuah kompromi.</h1>
         <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Daging.id lahir dari kegelisahan sederhana: kenapa belanja daging berkualitas harus selalu merepotkan? Kami menjawabnya dengan platform online yang transparan, cepat, dan terpercaya.
+          BundaRayaKitchen.id lahir dari kegelisahan sederhana: kenapa belanja daging berkualitas harus selalu merepotkan? Kami menjawabnya dengan platform online yang transparan, cepat, dan terpercaya.
         </p>
       </section>
 
