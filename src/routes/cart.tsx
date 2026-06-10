@@ -6,6 +6,7 @@ import { z } from "zod";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useCart, formatRupiah } from "@/lib/cart";
 import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -58,7 +59,7 @@ function CartPage() {
     cod: "COD (Bayar di Tempat)",
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = orderSchema.safeParse(form);
     if (!result.success) {
@@ -71,8 +72,36 @@ function CartPage() {
     setErrors({});
     setSubmitting(true);
 
-    const lines = items
-      .map((it) => `• ${it.product.name} (${it.qty} x ${formatRupiah(it.product.price)}) = ${formatRupiah(it.product.price * it.qty)}`)
+    const itemPesanan = items.map((it) => ({
+      nama: it.product.name,
+      qty: it.qty,
+      harga: it.product.price,
+      subtotal: it.product.price * it.qty,
+    }));
+
+    // 1) Simpan ke Supabase terlebih dahulu
+    const { error: dbErr } = await supabase.from("pesanan").insert({
+      nama_pembeli: form.name,
+      nomor_wa: form.phone,
+      alamat: form.address,
+      metode_pembayaran: paymentLabel[form.payment],
+      catatan: form.notes?.trim() || "",
+      total_harga: grandTotal,
+      item_pesanan: itemPesanan,
+      status_pesanan: "Baru",
+    });
+
+    if (dbErr) {
+      toast.error("Gagal menyimpan pesanan: " + dbErr.message);
+      setSubmitting(false);
+      return;
+    }
+
+    toast.success("Pesanan berhasil dicatat & dialihkan ke WhatsApp");
+
+    // 2) Susun pesan dan buka WhatsApp
+    const lines = itemPesanan
+      .map((it) => `• ${it.nama} (${it.qty} x ${formatRupiah(it.harga)}) = ${formatRupiah(it.subtotal)}`)
       .join("\n");
 
     const message = `*PESANAN BARU - BUNDA RAYA KITCHEN* 🥩
@@ -90,10 +119,10 @@ ${lines}
 *TOTAL TAGIHAN:* ${formatRupiah(grandTotal)}
 ----------------------------------`;
 
-    const url = `https://wa.me/6287882339338?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    const whatsappUrl = `https://wa.me/6287882339338?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+
     clear();
-    toast.success("Pesanan dialihkan ke WhatsApp");
     setSubmitting(false);
     navigate({ to: "/order" });
   };

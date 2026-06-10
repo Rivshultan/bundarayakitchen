@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select";
 import { categories } from "@/lib/products";
 import { formatRupiah } from "@/lib/cart";
-import { supabase, type ProdukRow } from "@/integrations/supabase/client";
+import { supabase, type ProdukRow, type PesananRow } from "@/integrations/supabase/client";
 import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
 import { toast } from "sonner";
 import { X } from "lucide-react";
@@ -51,55 +51,7 @@ export const Route = createFileRoute("/admin")({
 type View = "etalase" | "pesanan";
 type KategoriId = "sapi" | "ayam" | "olahan";
 
-type DummyOrder = {
-  id: string;
-  customer: string;
-  phone: string;
-  date: string;
-  address: string;
-  note: string;
-  items: { name: string; qty: number; price: number }[];
-};
-
-const dummyOrders: DummyOrder[] = [
-  {
-    id: "BRK-1042",
-    customer: "Ibu Siti Aminah",
-    phone: "0812-3456-7890",
-    date: "12 Juni 2026",
-    address: "Jl. Margonda Raya No. 88, Depok",
-    note: "Tolong dipotong dadu kecil, kirim sebelum jam 10 pagi.",
-    items: [
-      { name: "Sirloin Steak", qty: 2, price: 185000 },
-      { name: "Sosis Sapi Premium", qty: 1, price: 58000 },
-    ],
-  },
-  {
-    id: "BRK-1041",
-    customer: "Bapak Andi Wijaya",
-    phone: "0856-7788-9900",
-    date: "11 Juni 2026",
-    address: "Perumahan Grand Depok City Blok C5, Depok",
-    note: "—",
-    items: [
-      { name: "Daging Rendang", qty: 3, price: 145000 },
-      { name: "Bakso Sapi Urat", qty: 2, price: 65000 },
-    ],
-  },
-  {
-    id: "BRK-1040",
-    customer: "Ibu Rina Pratiwi",
-    phone: "0878-1122-3344",
-    date: "11 Juni 2026",
-    address: "Jl. Tole Iskandar No. 45, Depok",
-    note: "Tolong packing terpisah, untuk dua alamat.",
-    items: [
-      { name: "Ayam Kampung", qty: 2, price: 95000 },
-      { name: "Fillet Dada Ayam", qty: 1, price: 55000 },
-      { name: "Nugget Ayam Homemade", qty: 2, price: 42000 },
-    ],
-  },
-];
+// Removed dummy orders — now using real data from Supabase `pesanan` table.
 
 const categoryColor: Record<string, string> = {
   sapi: "bg-primary/15 text-primary border-primary/20",
@@ -121,6 +73,8 @@ function AdminPage() {
     catatan: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [orders, setOrders] = useState<PesananRow[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -136,25 +90,37 @@ function AdminPage() {
     setLoading(false);
   };
 
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    const { data, error } = await supabase
+      .from("pesanan")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("Gagal memuat pesanan: " + error.message);
+    } else {
+      setOrders((data ?? []) as PesananRow[]);
+    }
+    setOrdersLoading(false);
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchOrders();
   }, []);
 
   const stats = useMemo(() => {
-    const totalOmset = dummyOrders.reduce(
-      (s, o) => s + o.items.reduce((a, b) => a + b.price * b.qty, 0),
-      0,
-    );
+    const totalOmset = orders.reduce((s, o) => s + (o.total_harga || 0), 0);
     const activeCats = new Set(items.map((i) => i.kategori)).size;
     return {
       products: items.length,
-      orders: dummyOrders.length,
+      orders: orders.length,
       omset: totalOmset,
       cats: activeCats,
     };
-  }, [items]);
+  }, [items, orders]);
 
-  const ordersBadge = dummyOrders.length;
+  const ordersBadge = orders.filter((o) => o.status_pesanan === "Baru").length;
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -453,86 +419,124 @@ function AdminPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {dummyOrders.map((o) => {
-                const total = o.items.reduce((s, i) => s + i.price * i.qty, 0);
-                return (
-                  <Card key={o.id} style={{ boxShadow: "var(--shadow-card)" }}>
-                    <CardHeader className="border-b border-border">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-primary text-primary-foreground">#{o.id}</Badge>
-                            <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50">Baru</Badge>
-                          </div>
-                          <CardTitle className="font-display text-lg">{o.customer}</CardTitle>
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                            <Phone className="w-3.5 h-3.5" /> {o.phone}
-                          </div>
-                        </div>
-                        <div className="text-sm text-right">
-                          <div className="flex items-center gap-1.5 text-muted-foreground justify-end">
-                            <Calendar className="w-3.5 h-3.5" /> Kirim: {o.date}
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
-                        <div className="flex gap-2">
-                          <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+              {ordersLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Memuat pesanan...
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="text-center text-muted-foreground py-10 border border-dashed rounded-lg">
+                  Belum ada pesanan masuk.
+                </div>
+              ) : (
+                orders.map((o) => {
+                  const tanggal = new Date(o.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  const statusColor =
+                    o.status_pesanan === "Baru"
+                      ? "text-emerald-700 border-emerald-300 bg-emerald-50"
+                      : o.status_pesanan === "Diproses"
+                      ? "text-amber-700 border-amber-300 bg-amber-50"
+                      : "text-slate-700 border-slate-300 bg-slate-50";
+                  const updateStatus = async (next: string) => {
+                    const { error } = await supabase
+                      .from("pesanan")
+                      .update({ status_pesanan: next })
+                      .eq("id", o.id);
+                    if (error) toast.error("Gagal update status: " + error.message);
+                    else {
+                      toast.success(`Pesanan #${o.id} → ${next}`);
+                      await fetchOrders();
+                    }
+                  };
+                  return (
+                    <Card key={o.id} style={{ boxShadow: "var(--shadow-card)" }}>
+                      <CardHeader className="border-b border-border">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <div className="font-medium">Alamat</div>
-                            <div className="text-muted-foreground">{o.address}</div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="bg-primary text-primary-foreground">#BRK-{o.id}</Badge>
+                              <Badge variant="outline" className={statusColor}>{o.status_pesanan}</Badge>
+                            </div>
+                            <CardTitle className="font-display text-lg">{o.nama_pembeli}</CardTitle>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                              <Phone className="w-3.5 h-3.5" /> {o.nomor_wa}
+                            </div>
+                          </div>
+                          <div className="text-sm text-right">
+                            <div className="flex items-center gap-1.5 text-muted-foreground justify-end">
+                              <Calendar className="w-3.5 h-3.5" /> {tanggal}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {o.metode_pembayaran}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <StickyNote className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                          <div>
-                            <div className="font-medium">Catatan</div>
-                            <div className="text-muted-foreground">{o.note}</div>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div className="flex gap-2">
+                            <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                            <div>
+                              <div className="font-medium">Alamat</div>
+                              <div className="text-muted-foreground">{o.alamat}</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <StickyNote className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                            <div>
+                              <div className="font-medium">Catatan</div>
+                              <div className="text-muted-foreground">{o.catatan?.trim() || "—"}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="border border-border rounded-lg overflow-hidden">
-                        <table className="w-full text-sm">
-                          <thead className="bg-secondary/60 text-secondary-foreground">
-                            <tr>
-                              <th className="text-left px-4 py-2 font-medium">Item</th>
-                              <th className="text-center px-4 py-2 font-medium w-16">Qty</th>
-                              <th className="text-right px-4 py-2 font-medium">Subtotal</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {o.items.map((it, idx) => (
-                              <tr key={idx} className="border-t border-border">
-                                <td className="px-4 py-2">{it.name}</td>
-                                <td className="px-4 py-2 text-center">{it.qty}</td>
-                                <td className="px-4 py-2 text-right">{formatRupiah(it.price * it.qty)}</td>
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-secondary/60 text-secondary-foreground">
+                              <tr>
+                                <th className="text-left px-4 py-2 font-medium">Item</th>
+                                <th className="text-center px-4 py-2 font-medium w-16">Qty</th>
+                                <th className="text-right px-4 py-2 font-medium">Subtotal</th>
                               </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="border-t border-border bg-muted/40">
-                              <td colSpan={2} className="px-4 py-3 text-right font-semibold">Total Tagihan</td>
-                              <td className="px-4 py-3 text-right font-display text-lg font-bold text-primary">
-                                {formatRupiah(total)}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {(o.item_pesanan ?? []).map((it, idx) => (
+                                <tr key={idx} className="border-t border-border">
+                                  <td className="px-4 py-2">{it.nama}</td>
+                                  <td className="px-4 py-2 text-center">{it.qty}</td>
+                                  <td className="px-4 py-2 text-right">{formatRupiah(it.subtotal)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t border-border bg-muted/40">
+                                <td colSpan={2} className="px-4 py-3 text-right font-semibold">Total Tagihan</td>
+                                <td className="px-4 py-3 text-right font-display text-lg font-bold text-primary">
+                                  {formatRupiah(o.total_harga)}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
 
-                      <div className="flex gap-2 justify-end">
-                        <Button variant="outline" size="sm">Tandai Diproses</Button>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                          Konfirmasi Pesanan
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" size="sm" onClick={() => updateStatus("Diproses")}>
+                            Tandai Diproses
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => updateStatus("Selesai")}
+                          >
+                            Konfirmasi Pesanan
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           )}
         </div>
