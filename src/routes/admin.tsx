@@ -407,17 +407,13 @@ function AdminPage() {
                     {items.map((p) => (
                       <Card key={p.id} className="overflow-hidden group">
                         <div className="aspect-[4/3] bg-muted overflow-hidden">
-                          {p.gambar_url ? (
-                            <img
-                              src={p.gambar_url}
-                              alt={p.nama}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full grid place-items-center text-muted-foreground text-sm">
-                              Tanpa Gambar
-                            </div>
-                          )}
+                          <img
+                            src={p.gambar_url || IMAGE_PLACEHOLDER}
+                            alt={p.nama}
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
                         </div>
                         <CardContent className="p-4 space-y-2">
                           <div className="flex items-start justify-between gap-2">
