@@ -432,7 +432,7 @@ function AdminPage() {
                             <p className="text-xs text-muted-foreground line-clamp-2">{p.deskripsi}</p>
                           )}
                           <div className="flex gap-2 pt-2">
-                            <Button size="sm" variant="outline" className="flex-1" onClick={() => toast.info("Fitur edit akan datang")}>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}>
                               <Pencil className="w-3.5 h-3.5" /> Edit
                             </Button>
                             <Button
