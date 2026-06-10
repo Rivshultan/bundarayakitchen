@@ -15,3 +15,23 @@ export type ProdukRow = {
   catatan: string | null;
   gambar_url: string | null;
 };
+
+export type PesananItem = {
+  nama: string;
+  qty: number;
+  harga: number;
+  subtotal: number;
+};
+
+export type PesananRow = {
+  id: number;
+  nama_pembeli: string;
+  nomor_wa: string;
+  alamat: string;
+  metode_pembayaran: string;
+  catatan: string | null;
+  total_harga: number;
+  item_pesanan: PesananItem[];
+  status_pesanan: string;
+  created_at: string;
+};
