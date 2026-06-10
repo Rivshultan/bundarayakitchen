@@ -22,6 +22,7 @@ export const Route = createFileRoute("/order")({
 function OrderPage() {
   const [active, setActive] = useState<"sapi" | "ayam" | "olahan">("sapi");
   const [selected, setSelected] = useState<Product | null>(null);
+  const { products, loading } = useProducts();
 
   const filtered = products.filter((p) => p.category === active);
 
