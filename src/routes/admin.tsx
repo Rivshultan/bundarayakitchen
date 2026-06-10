@@ -120,7 +120,7 @@ function AdminPage() {
     };
   }, [items, orders]);
 
-  const ordersBadge = orders.filter((o) => o.status_pesanan === "Baru").length;
+  const ordersBadge = orders.filter((o) => Date.now() - new Date(o.created_at).getTime() < 24 * 3600 * 1000).length;
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
