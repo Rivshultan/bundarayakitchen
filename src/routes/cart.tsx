@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Minus, Plus, Trash2, ShoppingBag, Check } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SiteLayout } from "@/components/SiteLayout";
 import { useCart, formatRupiah } from "@/lib/cart";
+import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -28,26 +29,8 @@ function CartPage() {
   const { items, updateQty, remove, total, clear, count } = useCart();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({ name: "", phone: "", address: "", payment: "transfer" as "transfer" | "cod" | "ewallet", notes: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  if (success) {
-    return (
-      <SiteLayout>
-        <div className="max-w-xl mx-auto px-6 py-24 text-center">
-          <div className="w-20 h-20 mx-auto rounded-full grid place-items-center" style={{ background: "var(--gradient-warm)" }}>
-            <Check className="w-10 h-10 text-primary-foreground" />
-          </div>
-          <h1 className="mt-6 text-3xl font-bold">Pesanan diterima!</h1>
-          <p className="mt-3 text-muted-foreground">Terima kasih sudah berbelanja di BundaRayaKitchen.id. Tim kami akan menghubungi Anda lewat WhatsApp untuk konfirmasi.</p>
-          <button onClick={() => navigate({ to: "/order" })} className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-primary text-primary-foreground font-semibold hover:opacity-90">
-            Belanja Lagi
-          </button>
-        </div>
-      </SiteLayout>
-    );
-  }
 
   if (count === 0) {
     return (
@@ -66,6 +49,15 @@ function CartPage() {
     );
   }
 
+  const ongkir = 15000;
+  const grandTotal = total + ongkir;
+
+  const paymentLabel: Record<typeof form.payment, string> = {
+    transfer: "Transfer Bank",
+    ewallet: "E-Wallet",
+    cod: "COD (Bayar di Tempat)",
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = orderSchema.safeParse(form);
@@ -78,15 +70,33 @@ function CartPage() {
     }
     setErrors({});
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
-      setSuccess(true);
-      clear();
-    }, 1000);
-  };
 
-  const ongkir = 15000;
-  const grandTotal = total + ongkir;
+    const lines = items
+      .map((it) => `• ${it.product.name} (${it.qty} x ${formatRupiah(it.product.price)}) = ${formatRupiah(it.product.price * it.qty)}`)
+      .join("\n");
+
+    const message = `*PESANAN BARU - BUNDA RAYA KITCHEN* 🥩
+----------------------------------
+*Pelanggan:* ${form.name} | ${form.phone}
+*Alamat:* ${form.address}
+
+*Pesanan:*
+${lines}
+
+*Ongkos Kirim:* ${formatRupiah(ongkir)}
+*Metode Pembayaran:* ${paymentLabel[form.payment]}
+*Catatan:* ${form.notes?.trim() || "-"}
+
+*TOTAL TAGIHAN:* ${formatRupiah(grandTotal)}
+----------------------------------`;
+
+    const url = `https://wa.me/6287882339338?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+    clear();
+    toast.success("Pesanan dialihkan ke WhatsApp");
+    setSubmitting(false);
+    navigate({ to: "/order" });
+  };
 
   return (
     <SiteLayout>
@@ -101,7 +111,7 @@ function CartPage() {
           <div className="bg-card border border-border rounded-2xl divide-y divide-border overflow-hidden">
             {items.map((it) => (
               <div key={it.product.id} className="p-4 flex gap-4 items-center">
-                <img src={it.product.image} alt={it.product.name} className="w-20 h-20 rounded-xl object-cover" />
+                <img src={it.product.image} alt={it.product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }} className="w-20 h-20 rounded-xl object-cover" />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{it.product.name}</h3>
                   <p className="text-xs text-muted-foreground">{formatRupiah(it.product.price)} {it.product.unit}</p>

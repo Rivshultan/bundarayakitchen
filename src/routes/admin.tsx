@@ -33,7 +33,9 @@ import {
 import { categories } from "@/lib/products";
 import { formatRupiah } from "@/lib/cart";
 import { supabase, type ProdukRow } from "@/integrations/supabase/client";
+import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -110,6 +112,7 @@ function AdminPage() {
   const [items, setItems] = useState<ProdukRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<ProdukRow | null>(null);
   const [form, setForm] = useState({
     name: "",
     category: "sapi" as KategoriId,
@@ -404,17 +407,13 @@ function AdminPage() {
                     {items.map((p) => (
                       <Card key={p.id} className="overflow-hidden group">
                         <div className="aspect-[4/3] bg-muted overflow-hidden">
-                          {p.gambar_url ? (
-                            <img
-                              src={p.gambar_url}
-                              alt={p.nama}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full grid place-items-center text-muted-foreground text-sm">
-                              Tanpa Gambar
-                            </div>
-                          )}
+                          <img
+                            src={p.gambar_url || IMAGE_PLACEHOLDER}
+                            alt={p.nama}
+                            referrerPolicy="no-referrer"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
                         </div>
                         <CardContent className="p-4 space-y-2">
                           <div className="flex items-start justify-between gap-2">
@@ -433,7 +432,7 @@ function AdminPage() {
                             <p className="text-xs text-muted-foreground line-clamp-2">{p.deskripsi}</p>
                           )}
                           <div className="flex gap-2 pt-2">
-                            <Button size="sm" variant="outline" className="flex-1" onClick={() => toast.info("Fitur edit akan datang")}>
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditing(p)}>
                               <Pencil className="w-3.5 h-3.5" /> Edit
                             </Button>
                             <Button
@@ -537,6 +536,143 @@ function AdminPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {editing && (
+        <EditProductModal
+          product={editing}
+          onClose={() => setEditing(null)}
+          onSaved={async () => {
+            setEditing(null);
+            await fetchItems();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditProductModal({
+  product,
+  onClose,
+  onSaved,
+}: {
+  product: ProdukRow;
+  onClose: () => void;
+  onSaved: () => void | Promise<void>;
+}) {
+  const [form, setForm] = useState({
+    nama: product.nama,
+    kategori: product.kategori as KategoriId,
+    harga: String(product.harga),
+    deskripsi: product.deskripsi ?? "",
+    catatan: product.catatan ?? "",
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.nama || !form.harga) {
+      toast.error("Nama dan harga wajib diisi");
+      return;
+    }
+    setSaving(true);
+    try {
+      let gambar_url = product.gambar_url;
+      if (file) {
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("product-images")
+          .upload(path, file, { cacheControl: "3600", upsert: false });
+        if (upErr) throw upErr;
+        gambar_url = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from("produk")
+        .update({
+          nama: form.nama,
+          kategori: form.kategori,
+          harga: parseInt(form.harga, 10),
+          deskripsi: form.deskripsi || "",
+          catatan: form.catatan || "",
+          gambar_url,
+        })
+        .eq("id", product.id);
+      if (error) throw error;
+
+      toast.success("Produk berhasil diperbarui");
+      await onSaved();
+    } catch (err: any) {
+      toast.error("Gagal memperbarui: " + (err?.message ?? "unknown error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-auto relative" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 z-10 w-9 h-9 grid place-items-center rounded-full bg-secondary hover:bg-muted">
+          <X className="w-4 h-4" />
+        </button>
+        <div className="p-6 border-b border-border">
+          <h2 className="font-display text-2xl font-bold">Edit Produk</h2>
+          <p className="text-sm text-muted-foreground mt-1">Perbarui data produk #{product.id}</p>
+        </div>
+        <form onSubmit={handleSave} className="p-6 grid md:grid-cols-2 gap-4">
+          <div className="md:col-span-2">
+            <Label className="mb-2 block">Gambar Saat Ini</Label>
+            <div className="aspect-[4/3] max-w-xs bg-muted rounded-lg overflow-hidden border border-border">
+              <img
+                src={product.gambar_url || IMAGE_PLACEHOLDER}
+                alt={product.nama}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="edit-image">Ganti Foto (opsional)</Label>
+            <Input id="edit-image" type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+            <p className="text-xs text-muted-foreground">Biarkan kosong jika tidak ingin mengganti gambar.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-name">Nama Produk</Label>
+            <Input id="edit-name" value={form.nama} onChange={(e) => setForm({ ...form, nama: e.target.value })} />
+          </div>
+          <div className="space-y-2">
+            <Label>Kategori</Label>
+            <Select value={form.kategori} onValueChange={(v) => setForm({ ...form, kategori: v as KategoriId })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="edit-price">Harga (Rp)</Label>
+            <Input id="edit-price" type="number" value={form.harga} onChange={(e) => setForm({ ...form, harga: e.target.value })} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="edit-desc">Deskripsi</Label>
+            <Textarea id="edit-desc" rows={3} value={form.deskripsi} onChange={(e) => setForm({ ...form, deskripsi: e.target.value })} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="edit-catatan">Catatan</Label>
+            <Textarea id="edit-catatan" rows={2} value={form.catatan} onChange={(e) => setForm({ ...form, catatan: e.target.value })} />
+          </div>
+          <div className="md:col-span-2 flex gap-2 justify-end pt-2">
+            <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
+            <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+              {saving ? (<><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>) : "Simpan Perubahan"}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
