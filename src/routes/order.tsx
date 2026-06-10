@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Plus, Minus, ShoppingBag, X } from "lucide-react";
+import { Plus, Minus, ShoppingBag, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SiteLayout } from "@/components/SiteLayout";
-import { categories, products } from "@/lib/products";
+import { categories } from "@/lib/products";
 import { useCart, formatRupiah, type Product } from "@/lib/cart";
+import { useProducts, IMAGE_PLACEHOLDER } from "@/lib/useProducts";
 
 export const Route = createFileRoute("/order")({
   head: () => ({
