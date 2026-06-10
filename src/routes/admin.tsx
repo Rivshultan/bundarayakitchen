@@ -51,55 +51,7 @@ export const Route = createFileRoute("/admin")({
 type View = "etalase" | "pesanan";
 type KategoriId = "sapi" | "ayam" | "olahan";
 
-type DummyOrder = {
-  id: string;
-  customer: string;
-  phone: string;
-  date: string;
-  address: string;
-  note: string;
-  items: { name: string; qty: number; price: number }[];
-};
-
-const dummyOrders: DummyOrder[] = [
-  {
-    id: "BRK-1042",
-    customer: "Ibu Siti Aminah",
-    phone: "0812-3456-7890",
-    date: "12 Juni 2026",
-    address: "Jl. Margonda Raya No. 88, Depok",
-    note: "Tolong dipotong dadu kecil, kirim sebelum jam 10 pagi.",
-    items: [
-      { name: "Sirloin Steak", qty: 2, price: 185000 },
-      { name: "Sosis Sapi Premium", qty: 1, price: 58000 },
-    ],
-  },
-  {
-    id: "BRK-1041",
-    customer: "Bapak Andi Wijaya",
-    phone: "0856-7788-9900",
-    date: "11 Juni 2026",
-    address: "Perumahan Grand Depok City Blok C5, Depok",
-    note: "—",
-    items: [
-      { name: "Daging Rendang", qty: 3, price: 145000 },
-      { name: "Bakso Sapi Urat", qty: 2, price: 65000 },
-    ],
-  },
-  {
-    id: "BRK-1040",
-    customer: "Ibu Rina Pratiwi",
-    phone: "0878-1122-3344",
-    date: "11 Juni 2026",
-    address: "Jl. Tole Iskandar No. 45, Depok",
-    note: "Tolong packing terpisah, untuk dua alamat.",
-    items: [
-      { name: "Ayam Kampung", qty: 2, price: 95000 },
-      { name: "Fillet Dada Ayam", qty: 1, price: 55000 },
-      { name: "Nugget Ayam Homemade", qty: 2, price: 42000 },
-    ],
-  },
-];
+// Removed dummy orders — now using real data from Supabase `pesanan` table.
 
 const categoryColor: Record<string, string> = {
   sapi: "bg-primary/15 text-primary border-primary/20",
