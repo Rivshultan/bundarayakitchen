@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Beef,
   Package,
@@ -15,6 +15,7 @@ import {
   MapPin,
   Calendar,
   StickyNote,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { products as seedProducts, categories } from "@/lib/products";
-import { formatRupiah, type Product } from "@/lib/cart";
+import { categories } from "@/lib/products";
+import { formatRupiah } from "@/lib/cart";
+import { supabase, type ProdukRow } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -45,6 +47,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 type View = "etalase" | "pesanan";
+type KategoriId = "sapi" | "ayam" | "olahan";
 
 type DummyOrder = {
   id: string;
@@ -104,21 +107,42 @@ const categoryColor: Record<string, string> = {
 
 function AdminPage() {
   const [view, setView] = useState<View>("etalase");
-  const [items, setItems] = useState<Product[]>(seedProducts);
+  const [items, setItems] = useState<ProdukRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    category: "sapi" as Product["category"],
+    category: "sapi" as KategoriId,
     price: "",
     description: "",
-    image: "",
+    catatan: "",
   });
+  const [file, setFile] = useState<File | null>(null);
+
+  const fetchItems = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("produk")
+      .select("*")
+      .order("id", { ascending: false });
+    if (error) {
+      toast.error("Gagal memuat produk: " + error.message);
+    } else {
+      setItems((data ?? []) as ProdukRow[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
 
   const stats = useMemo(() => {
     const totalOmset = dummyOrders.reduce(
       (s, o) => s + o.items.reduce((a, b) => a + b.price * b.qty, 0),
       0,
     );
-    const activeCats = new Set(items.map((i) => i.category)).size;
+    const activeCats = new Set(items.map((i) => i.kategori)).size;
     return {
       products: items.length,
       orders: dummyOrders.length,
@@ -129,31 +153,59 @@ function AdminPage() {
 
   const ordersBadge = dummyOrders.length;
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.price) {
       toast.error("Nama dan harga wajib diisi");
       return;
     }
-    const fallbackImg =
-      categories.find((c) => c.id === form.category)?.image ?? seedProducts[0].image;
-    const newProduct: Product = {
-      id: `${form.category}-${Date.now()}`,
-      name: form.name,
-      category: form.category,
-      price: Number(form.price),
-      unit: "/ 500g",
-      image: form.image || fallbackImg,
-      description: form.description || "Produk baru di etalase.",
-    };
-    setItems((prev) => [newProduct, ...prev]);
-    setForm({ name: "", category: "sapi", price: "", description: "", image: "" });
-    toast.success("Produk berhasil ditambahkan ke etalase");
+    if (!file) {
+      toast.error("Silakan pilih foto produk");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("product-images")
+        .upload(path, file, { cacheControl: "3600", upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("product-images").getPublicUrl(path);
+      const gambar_url = pub.publicUrl;
+
+      const { error: insErr } = await supabase.from("produk").insert({
+        nama: form.name,
+        kategori: form.category,
+        harga: parseInt(form.price, 10),
+        deskripsi: form.description || "",
+        catatan: form.catatan || "",
+        gambar_url,
+      });
+      if (insErr) throw insErr;
+
+      toast.success("Produk berhasil ditambahkan ke etalase");
+      setForm({ name: "", category: "sapi", price: "", description: "", catatan: "" });
+      setFile(null);
+      const fileInput = document.getElementById("image") as HTMLInputElement | null;
+      if (fileInput) fileInput.value = "";
+      await fetchItems();
+    } catch (err: any) {
+      toast.error("Gagal menyimpan: " + (err?.message ?? "unknown error"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setItems((prev) => prev.filter((p) => p.id !== id));
+  const handleDelete = async (id: number) => {
+    const { error } = await supabase.from("produk").delete().eq("id", id);
+    if (error) {
+      toast.error("Gagal menghapus: " + error.message);
+      return;
+    }
     toast.success("Produk dihapus");
+    await fetchItems();
   };
 
   return (
@@ -239,7 +291,7 @@ function AdminPage() {
             </p>
           </div>
 
-          {/* Stats — selalu tampil */}
+          {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard icon={<Package className="w-5 h-5" />} label="Total Produk" value={stats.products.toString()} />
             <StatCard icon={<ShoppingBag className="w-5 h-5" />} label="Pesanan Masuk" value={stats.orders.toString()} />
@@ -270,7 +322,7 @@ function AdminPage() {
                       <Label>Kategori</Label>
                       <Select
                         value={form.category}
-                        onValueChange={(v) => setForm({ ...form, category: v as Product["category"] })}
+                        onValueChange={(v) => setForm({ ...form, category: v as KategoriId })}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -291,12 +343,12 @@ function AdminPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="image">Link Foto Produk</Label>
+                      <Label htmlFor="image">Foto Produk</Label>
                       <Input
                         id="image"
-                        value={form.image}
-                        onChange={(e) => setForm({ ...form, image: e.target.value })}
-                        placeholder="https://..."
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
@@ -309,12 +361,27 @@ function AdminPage() {
                         rows={3}
                       />
                     </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="catatan">Catatan (opsional)</Label>
+                      <Textarea
+                        id="catatan"
+                        value={form.catatan}
+                        onChange={(e) => setForm({ ...form, catatan: e.target.value })}
+                        placeholder="Catatan internal..."
+                        rows={2}
+                      />
+                    </div>
                     <div className="md:col-span-2">
                       <Button
                         type="submit"
+                        disabled={submitting}
                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                       >
-                        <Plus className="w-4 h-4" /> Simpan ke Etalase
+                        {submitting ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
+                        ) : (
+                          <><Plus className="w-4 h-4" /> Simpan ke Etalase</>
+                        )}
                       </Button>
                     </div>
                   </form>
@@ -324,46 +391,65 @@ function AdminPage() {
               {/* List */}
               <div>
                 <h2 className="font-display text-2xl font-bold mb-4">Daftar Etalase Saat Ini</h2>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {items.map((p) => (
-                    <Card key={p.id} className="overflow-hidden group">
-                      <div className="aspect-[4/3] bg-muted overflow-hidden">
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                        />
-                      </div>
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="font-semibold leading-tight">{p.name}</h3>
-                          <Badge
-                            variant="outline"
-                            className={categoryColor[p.category]}
-                          >
-                            {categories.find((c) => c.id === p.category)?.name}
-                          </Badge>
+                {loading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...
+                  </div>
+                ) : items.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-10 border border-dashed rounded-lg">
+                    Belum ada produk. Tambahkan produk pertama Anda di form atas.
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((p) => (
+                      <Card key={p.id} className="overflow-hidden group">
+                        <div className="aspect-[4/3] bg-muted overflow-hidden">
+                          {p.gambar_url ? (
+                            <img
+                              src={p.gambar_url}
+                              alt={p.nama}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <div className="w-full h-full grid place-items-center text-muted-foreground text-sm">
+                              Tanpa Gambar
+                            </div>
+                          )}
                         </div>
-                        <p className="text-primary font-display text-lg font-bold">
-                          {formatRupiah(p.price)} <span className="text-xs text-muted-foreground font-sans font-normal">{p.unit}</span>
-                        </p>
-                        <div className="flex gap-2 pt-2">
-                          <Button size="sm" variant="outline" className="flex-1" onClick={() => toast.info("Fitur edit akan datang")}>
-                            <Pencil className="w-3.5 h-3.5" /> Edit
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() => handleDelete(p.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Hapus
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <CardContent className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <h3 className="font-semibold leading-tight">{p.nama}</h3>
+                            <Badge
+                              variant="outline"
+                              className={categoryColor[p.kategori] ?? "bg-secondary text-secondary-foreground border-border"}
+                            >
+                              {categories.find((c) => c.id === p.kategori)?.name ?? p.kategori}
+                            </Badge>
+                          </div>
+                          <p className="text-primary font-display text-lg font-bold">
+                            {formatRupiah(p.harga)}
+                          </p>
+                          {p.deskripsi && (
+                            <p className="text-xs text-muted-foreground line-clamp-2">{p.deskripsi}</p>
+                          )}
+                          <div className="flex gap-2 pt-2">
+                            <Button size="sm" variant="outline" className="flex-1" onClick={() => toast.info("Fitur edit akan datang")}>
+                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => handleDelete(p.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Hapus
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ) : (
