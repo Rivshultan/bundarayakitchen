@@ -111,7 +111,7 @@ ${lines}
           <div className="bg-card border border-border rounded-2xl divide-y divide-border overflow-hidden">
             {items.map((it) => (
               <div key={it.product.id} className="p-4 flex gap-4 items-center">
-                <img src={it.product.image} alt={it.product.name} className="w-20 h-20 rounded-xl object-cover" />
+                <img src={it.product.image} alt={it.product.name} onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }} className="w-20 h-20 rounded-xl object-cover" />
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{it.product.name}</h3>
                   <p className="text-xs text-muted-foreground">{formatRupiah(it.product.price)} {it.product.unit}</p>
