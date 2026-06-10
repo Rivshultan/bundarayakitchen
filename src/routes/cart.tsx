@@ -73,22 +73,29 @@ function CartPage() {
     setSubmitting(true);
 
     const itemPesanan = items.map((it) => ({
-      nama: it.product.name,
-      qty: it.qty,
-      harga: it.product.price,
+      id_produk: Number.parseInt(it.product.id, 10) || 0,
+      nama_produk: it.product.name,
+      jumlah: it.qty,
+      harga_satuan: it.product.price,
       subtotal: it.product.price * it.qty,
     }));
 
-    // 1) Simpan ke Supabase terlebih dahulu
+    // Tanggal kirim default: besok (H+1)
+    const besok = new Date();
+    besok.setDate(besok.getDate() + 1);
+    const tanggalKirim = besok.toISOString().slice(0, 10);
+
+    const catatanFinal = `[${paymentLabel[form.payment]}]${form.notes?.trim() ? " " + form.notes.trim() : ""}`;
+
+    // 1) Simpan ke Supabase terlebih dahulu (sesuai skema tabel `pesanan`)
     const { error: dbErr } = await supabase.from("pesanan").insert({
-      nama_pembeli: form.name,
-      nomor_wa: form.phone,
+      nama: form.name,
+      hp: form.phone,
+      tanggal_kirim: tanggalKirim,
       alamat: form.address,
-      metode_pembayaran: paymentLabel[form.payment],
-      catatan: form.notes?.trim() || "",
+      catatan: catatanFinal,
       total_harga: grandTotal,
-      item_pesanan: itemPesanan,
-      status_pesanan: "Baru",
+      keranjang: JSON.stringify(itemPesanan),
     });
 
     if (dbErr) {
@@ -101,7 +108,7 @@ function CartPage() {
 
     // 2) Susun pesan dan buka WhatsApp
     const lines = itemPesanan
-      .map((it) => `• ${it.nama} (${it.qty} x ${formatRupiah(it.harga)}) = ${formatRupiah(it.subtotal)}`)
+      .map((it) => `• ${it.nama_produk} (${it.jumlah} x ${formatRupiah(it.harga_satuan)}) = ${formatRupiah(it.subtotal)}`)
       .join("\n");
 
     const message = `*PESANAN BARU - BUNDA RAYA KITCHEN* 🥩
