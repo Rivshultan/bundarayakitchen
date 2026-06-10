@@ -33,7 +33,9 @@ import {
 import { categories } from "@/lib/products";
 import { formatRupiah } from "@/lib/cart";
 import { supabase, type ProdukRow } from "@/integrations/supabase/client";
+import { IMAGE_PLACEHOLDER } from "@/lib/useProducts";
 import { toast } from "sonner";
+import { X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
