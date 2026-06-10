@@ -18,8 +18,8 @@ function Home() {
   return (
     <SiteLayout>
       {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-hero)" }} />
+      <section className="relative overflow-hidden isolate">
+        <div className="absolute inset-0 -z-10" style={{ background: "var(--gradient-hero)" }} aria-hidden />
         <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-2 gap-12 items-center text-primary-foreground">
           <div>
             <span className="inline-block px-3 py-1 rounded-full bg-primary-foreground/10 text-xs font-medium tracking-wider uppercase backdrop-blur-sm border border-primary-foreground/20">
