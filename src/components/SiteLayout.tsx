@@ -72,7 +72,7 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </div>
           <div>
             <h4 className="font-semibold mb-3">Kontak</h4>
-            <p className="text-muted-foreground">Jakarta, Indonesia<br />WhatsApp: 0812-3456-7890<br />halo@daging.id</p>
+            <p className="text-muted-foreground">Depok, Indonesia<br />WhatsApp: 0878-8233-9338<br />bundarayakitchen@gmail.com</p>
           </div>
         </div>
         <div className="border-t border-border py-5 text-center text-xs text-muted-foreground">
