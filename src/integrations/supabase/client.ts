@@ -17,21 +17,21 @@ export type ProdukRow = {
 };
 
 export type PesananItem = {
-  nama: string;
-  qty: number;
-  harga: number;
+  id_produk: number;
+  nama_produk: string;
+  jumlah: number;
+  harga_satuan: number;
   subtotal: number;
 };
 
 export type PesananRow = {
   id: number;
-  nama_pembeli: string;
-  nomor_wa: string;
-  alamat: string;
-  metode_pembayaran: string;
-  catatan: string | null;
-  total_harga: number;
-  item_pesanan: PesananItem[];
-  status_pesanan: string;
   created_at: string;
+  nama: string;
+  hp: string;
+  tanggal_kirim: string;
+  alamat: string;
+  catatan: string | null;
+  keranjang: string | PesananItem[];
+  total_harga: number;
 };
