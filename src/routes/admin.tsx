@@ -112,6 +112,7 @@ function AdminPage() {
   const [items, setItems] = useState<ProdukRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [editing, setEditing] = useState<ProdukRow | null>(null);
   const [form, setForm] = useState({
     name: "",
     category: "sapi" as KategoriId,
