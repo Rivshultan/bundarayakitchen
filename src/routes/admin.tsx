@@ -419,86 +419,124 @@ function AdminPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {dummyOrders.map((o) => {
-                const total = o.items.reduce((s, i) => s + i.price * i.qty, 0);
-                return (
-                  <Card key={o.id} style={{ boxShadow: "var(--shadow-card)" }}>
-                    <CardHeader className="border-b border-border">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className="bg-primary text-primary-foreground">#{o.id}</Badge>
-                            <Badge variant="outline" className="text-emerald-700 border-emerald-300 bg-emerald-50">Baru</Badge>
-                          </div>
-                          <CardTitle className="font-display text-lg">{o.customer}</CardTitle>
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
-                            <Phone className="w-3.5 h-3.5" /> {o.phone}
-                          </div>
-                        </div>
-                        <div className="text-sm text-right">
-                          <div className="flex items-center gap-1.5 text-muted-foreground justify-end">
-                            <Calendar className="w-3.5 h-3.5" /> Kirim: {o.date}
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4 text-sm">
-                        <div className="flex gap-2">
-                          <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+              {ordersLoading ? (
+                <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Memuat pesanan...
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="text-center text-muted-foreground py-10 border border-dashed rounded-lg">
+                  Belum ada pesanan masuk.
+                </div>
+              ) : (
+                orders.map((o) => {
+                  const tanggal = new Date(o.created_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  const statusColor =
+                    o.status_pesanan === "Baru"
+                      ? "text-emerald-700 border-emerald-300 bg-emerald-50"
+                      : o.status_pesanan === "Diproses"
+                      ? "text-amber-700 border-amber-300 bg-amber-50"
+                      : "text-slate-700 border-slate-300 bg-slate-50";
+                  const updateStatus = async (next: string) => {
+                    const { error } = await supabase
+                      .from("pesanan")
+                      .update({ status_pesanan: next })
+                      .eq("id", o.id);
+                    if (error) toast.error("Gagal update status: " + error.message);
+                    else {
+                      toast.success(`Pesanan #${o.id} → ${next}`);
+                      await fetchOrders();
+                    }
+                  };
+                  return (
+                    <Card key={o.id} style={{ boxShadow: "var(--shadow-card)" }}>
+                      <CardHeader className="border-b border-border">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
-                            <div className="font-medium">Alamat</div>
-                            <div className="text-muted-foreground">{o.address}</div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="bg-primary text-primary-foreground">#BRK-{o.id}</Badge>
+                              <Badge variant="outline" className={statusColor}>{o.status_pesanan}</Badge>
+                            </div>
+                            <CardTitle className="font-display text-lg">{o.nama_pembeli}</CardTitle>
+                            <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-1">
+                              <Phone className="w-3.5 h-3.5" /> {o.nomor_wa}
+                            </div>
+                          </div>
+                          <div className="text-sm text-right">
+                            <div className="flex items-center gap-1.5 text-muted-foreground justify-end">
+                              <Calendar className="w-3.5 h-3.5" /> {tanggal}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {o.metode_pembayaran}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <StickyNote className="w-4 h-4 mt-0.5 text-primary shrink-0" />
-                          <div>
-                            <div className="font-medium">Catatan</div>
-                            <div className="text-muted-foreground">{o.note}</div>
+                      </CardHeader>
+                      <CardContent className="p-6 space-y-4">
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div className="flex gap-2">
+                            <MapPin className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                            <div>
+                              <div className="font-medium">Alamat</div>
+                              <div className="text-muted-foreground">{o.alamat}</div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <StickyNote className="w-4 h-4 mt-0.5 text-primary shrink-0" />
+                            <div>
+                              <div className="font-medium">Catatan</div>
+                              <div className="text-muted-foreground">{o.catatan?.trim() || "—"}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="border border-border rounded-lg overflow-hidden">
-                        <table className="w-full text-sm">
-                          <thead className="bg-secondary/60 text-secondary-foreground">
-                            <tr>
-                              <th className="text-left px-4 py-2 font-medium">Item</th>
-                              <th className="text-center px-4 py-2 font-medium w-16">Qty</th>
-                              <th className="text-right px-4 py-2 font-medium">Subtotal</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {o.items.map((it, idx) => (
-                              <tr key={idx} className="border-t border-border">
-                                <td className="px-4 py-2">{it.name}</td>
-                                <td className="px-4 py-2 text-center">{it.qty}</td>
-                                <td className="px-4 py-2 text-right">{formatRupiah(it.price * it.qty)}</td>
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <table className="w-full text-sm">
+                            <thead className="bg-secondary/60 text-secondary-foreground">
+                              <tr>
+                                <th className="text-left px-4 py-2 font-medium">Item</th>
+                                <th className="text-center px-4 py-2 font-medium w-16">Qty</th>
+                                <th className="text-right px-4 py-2 font-medium">Subtotal</th>
                               </tr>
-                            ))}
-                          </tbody>
-                          <tfoot>
-                            <tr className="border-t border-border bg-muted/40">
-                              <td colSpan={2} className="px-4 py-3 text-right font-semibold">Total Tagihan</td>
-                              <td className="px-4 py-3 text-right font-display text-lg font-bold text-primary">
-                                {formatRupiah(total)}
-                              </td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
+                            </thead>
+                            <tbody>
+                              {(o.item_pesanan ?? []).map((it, idx) => (
+                                <tr key={idx} className="border-t border-border">
+                                  <td className="px-4 py-2">{it.nama}</td>
+                                  <td className="px-4 py-2 text-center">{it.qty}</td>
+                                  <td className="px-4 py-2 text-right">{formatRupiah(it.subtotal)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t border-border bg-muted/40">
+                                <td colSpan={2} className="px-4 py-3 text-right font-semibold">Total Tagihan</td>
+                                <td className="px-4 py-3 text-right font-display text-lg font-bold text-primary">
+                                  {formatRupiah(o.total_harga)}
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
 
-                      <div className="flex gap-2 justify-end">
-                        <Button variant="outline" size="sm">Tandai Diproses</Button>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                          Konfirmasi Pesanan
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" size="sm" onClick={() => updateStatus("Diproses")}>
+                            Tandai Diproses
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => updateStatus("Selesai")}
+                          >
+                            Konfirmasi Pesanan
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
             </div>
           )}
         </div>
