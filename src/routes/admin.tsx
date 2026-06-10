@@ -73,6 +73,8 @@ function AdminPage() {
     catatan: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [orders, setOrders] = useState<PesananRow[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -88,25 +90,37 @@ function AdminPage() {
     setLoading(false);
   };
 
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    const { data, error } = await supabase
+      .from("pesanan")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast.error("Gagal memuat pesanan: " + error.message);
+    } else {
+      setOrders((data ?? []) as PesananRow[]);
+    }
+    setOrdersLoading(false);
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchOrders();
   }, []);
 
   const stats = useMemo(() => {
-    const totalOmset = dummyOrders.reduce(
-      (s, o) => s + o.items.reduce((a, b) => a + b.price * b.qty, 0),
-      0,
-    );
+    const totalOmset = orders.reduce((s, o) => s + (o.total_harga || 0), 0);
     const activeCats = new Set(items.map((i) => i.kategori)).size;
     return {
       products: items.length,
-      orders: dummyOrders.length,
+      orders: orders.length,
       omset: totalOmset,
       cats: activeCats,
     };
-  }, [items]);
+  }, [items, orders]);
 
-  const ordersBadge = dummyOrders.length;
+  const ordersBadge = orders.filter((o) => o.status_pesanan === "Baru").length;
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
