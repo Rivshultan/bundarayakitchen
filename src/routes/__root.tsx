@@ -65,6 +65,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Daging.id — Daging Segar Online" },
       { property: "og:description", content: "Pesan daging sapi, ayam, dan olahan segar berkualitas, antar cepat ke rumah Anda." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Daging.id — Daging Segar Online" },
+      { name: "twitter:description", content: "Pesan daging sapi, ayam, dan olahan segar berkualitas, antar cepat ke rumah Anda." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c1a52465-cb03-43c1-bc20-e73de595f0d1/id-preview-f88ca862--f2e05b31-5519-424b-845b-d4265d255e87.lovable.app-1781113816128.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/c1a52465-cb03-43c1-bc20-e73de595f0d1/id-preview-f88ca862--f2e05b31-5519-424b-845b-d4265d255e87.lovable.app-1781113816128.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
