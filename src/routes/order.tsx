@@ -69,27 +69,45 @@ function OrderPage() {
 
       {/* Product grid */}
       <section className="max-w-6xl mx-auto px-6 py-10">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filtered.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setSelected(p)}
-              className="group text-left bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 hover:-translate-y-1 transition-all"
-              style={{ boxShadow: "var(--shadow-card)" }}
-            >
-              <div className="aspect-square overflow-hidden">
-                <img src={p.image} alt={p.name} loading="lazy" width={400} height={400} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold">{p.name}</h3>
-                <div className="mt-2 flex items-baseline justify-between">
-                  <span className="text-primary font-bold">{formatRupiah(p.price)}</span>
-                  <span className="text-xs text-muted-foreground">{p.unit}</span>
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-20 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" /> Memuat produk...
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center text-muted-foreground py-16 border border-dashed rounded-2xl">
+            Belum ada produk pada kategori ini.
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {filtered.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelected(p)}
+                className="group text-left bg-card border border-border rounded-2xl overflow-hidden hover:border-primary/40 hover:-translate-y-1 transition-all"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <div className="aspect-square overflow-hidden bg-muted">
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    loading="lazy"
+                    width={400}
+                    height={400}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = IMAGE_PLACEHOLDER; }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
-              </div>
-            </button>
-          ))}
-        </div>
+                <div className="p-4">
+                  <h3 className="font-semibold">{p.name}</h3>
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="text-primary font-bold">{formatRupiah(p.price)}</span>
+                    <span className="text-xs text-muted-foreground">{p.unit}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </section>
 
       {selected && <ProductDialog product={selected} onClose={() => setSelected(null)} />}
