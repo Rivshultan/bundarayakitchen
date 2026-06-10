@@ -126,8 +126,14 @@ ${lines}
 *TOTAL TAGIHAN:* ${formatRupiah(grandTotal)}
 ----------------------------------`;
 
-    const whatsappUrl = `https://wa.me/6287882339338?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+    const encodedMessage = encodeURIComponent(message);
+    const link = document.createElement("a");
+    link.href = `https://wa.me/6287882339338?text=${encodedMessage}`;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
     clear();
     setSubmitting(false);
